@@ -1,3 +1,5 @@
+'use strict'
+
 const path = require('path')
 const webpack = require('webpack')
 const glob = require('glob')
@@ -5,7 +7,8 @@ const glob = require('glob')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const CleanWebpackPlugin = require('clean-webpack-plugin')
 const ExtractTextWebpack = require('extract-text-webpack-plugin')    // 抽离css样式
-const CommonsChunkPlugin = require('webpack/lib/optimize/CommonsChunkPlugin')
+//const CommonsChunkPlugin = require('webpack/lib/optimize/CommonsChunkPlugin')
+const OptimizeCssPlugin = require('optimize-css-assets-webpack-plugin')
 
 const entries = {}
 const chunks = []
@@ -15,8 +18,12 @@ glob.sync('./src/pages/**/index.js').forEach(path => {
   chunks.push(chunk)
 })
 
+// entries.push({'vendors': ['vue', 'element-ui']})
+
 console.log(entries)
 console.log(chunks)
+
+//entries['vendors'] = ['element-ui', 'vue']
 
 const config = {
   entry: entries,
@@ -28,7 +35,9 @@ const config = {
   resolve: {
     extensions: [".js", ".vue"],   // 自动解析确定的扩展
     alias: {
-      root: __dirname + '/node_modules'
+      root: __dirname + '/node_modules',
+      assets: __dirname + '/src/assets',
+      components: __dirname + 'src/components'
     }    // 相当于路径别名
   },
   module: {
@@ -40,6 +49,10 @@ const config = {
           loaders: {
             css: ExtractTextWebpack.extract({
               use: 'css-loader',
+              fallback: 'style-loader'
+            }),
+            less: ExtractTextWebpack.extract({
+              use: ['css-loader', 'postcss-loader', 'less-loader'],
               fallback: 'style-loader'
             }),
             postcss: ExtractTextWebpack.extract({
@@ -62,12 +75,30 @@ const config = {
         })
       },
       {
+        test: /\.less$/,
+        use: ExtractTextWebpack.extract({
+          use: ['css-loader', 'postcss-loader', 'less-loader'],
+          fallback: 'style-loader'
+        })
+      },
+      {
+        test: /\.html$/,
+        use: [{
+          loader: 'html-loader',
+          options: {
+            root: __dirname + '/src',
+            attrs: ['img:src', 'link:href']
+          }
+        }]
+      },
+      {
         test: /\.(png|jpg|jpeg|gif|eot|ttf|woff|woff2|svg|svgz)(\?.+)?$/,
         exclude: /favicon\.png$/,
         use: [{
           loader: 'url-loader',
           options: {
-            limit: 10000
+            limit: 10000,
+            name: 'assets/[name].[hash].[ext]'
           }
         }]
       }
@@ -75,13 +106,13 @@ const config = {
   },
   plugins: [
     new CleanWebpackPlugin(['dist']),
-    new CommonsChunkPlugin({
+    new webpack.optimize.CommonsChunkPlugin({
       name: 'vendors',
-      filename: 'assets/js/vendors.js',
+      // filename: 'assets/js/vendors.js',
       chunks: chunks,
-      minChunks: chunks.length
+      minChunks: 2
     }),
-    new webpack.HotModuleReplacementPlugin(),   // 热加载
+    //new webpack.HotModuleReplacementPlugin(),   // 热加载
     new ExtractTextWebpack({
       filename: 'assets/css/[name].css',
       allChunks: true
@@ -121,6 +152,7 @@ if (process.env.NODE_ENV === 'production') {
       compress: {
         warnings: false
       }
-    })
+    }),
+    new OptimizeCssPlugin()
   ])
 }
