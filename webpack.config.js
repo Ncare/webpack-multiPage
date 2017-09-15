@@ -29,7 +29,7 @@ const config = {
   entry: entries,
   devtool: '#eval-source-map',  // 追踪js中错误和警告
   output: {
-    filename: 'assets/js/[name].js',
+    filename: 'assets/js/[name].[hash].js',
     path: __dirname + '/dist'
   },
   resolve: {

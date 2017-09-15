@@ -20,6 +20,8 @@
 </template>
 
 <script>
+import axios from 'axios'
+
 export default {
   data () {
     return {
@@ -32,7 +34,14 @@ export default {
   methods: {
     login () {
       console.log(this.formItem)
-      location.href = 'home.html'
+      axios.get('/login')
+      .then(function(response) {
+        console.log('...')
+      })
+      .catch(function(err) {
+        console.log(err)
+      })
+      //location.href = 'home.html'
     }
   }
 }
