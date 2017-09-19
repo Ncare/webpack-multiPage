@@ -12,3 +12,14 @@ new webpack.optimize.CommonsChunkPlugin({
 // chunks 提取哪些模块的共有部分
 // 避免重复打包，使得单个页面的js, css太大
 ```
+
+
+```javascript
+new ExtractTextWebpack({
+      filename: '[name].css',     // 这里有点问题，加载路径之后，字体文件载入错误？
+      allChunks: true
+    })
+
+    // 暂未解决问题
+```
+

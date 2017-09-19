@@ -114,7 +114,7 @@ const config = {
     }),
     new webpack.HotModuleReplacementPlugin(),   // 热加载
     new ExtractTextWebpack({
-      filename: '[name].css',     // 这里有点问题
+      filename: '[name].css',     // 这里有点问题，加载路径之后，字体文件载入错误？
       allChunks: true
     })
   ],
