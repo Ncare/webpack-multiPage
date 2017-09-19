@@ -36,7 +36,6 @@ const config = {
     extensions: [".js", ".vue"],   // 自动解析确定的扩展
     alias: {
       root: __dirname + '/node_modules',
-      assets: __dirname + '/src/assets',
       components: __dirname + 'src/components'
     }    // 相当于路径别名
   },
@@ -98,7 +97,8 @@ const config = {
           loader: 'url-loader',
           options: {
             limit: 10000,
-            name: 'assets/[name].[hash].[ext]'
+            name: 'assets/img/[name].[ext]',
+            path: __dirname + '/dist'
           }
         }]
       }
@@ -112,9 +112,9 @@ const config = {
       chunks: chunks,
       minChunks: 2
     }),
-    //new webpack.HotModuleReplacementPlugin(),   // 热加载
+    new webpack.HotModuleReplacementPlugin(),   // 热加载
     new ExtractTextWebpack({
-      filename: 'assets/css/[name].css',
+      filename: '[name].css',     // 这里有点问题
       allChunks: true
     })
   ],

@@ -11,8 +11,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "vue": "^2.4.3",
-    "element-ui": "^1.4.4"
+    "element-ui": "^1.4.4",
+    "vue": "^2.4.3"
   },
   "devDependencies": {
     "autoprefixer": "^7.1.4",
