@@ -13,27 +13,11 @@
         </MenuItem>
       </div>
     </Menu>
-    <div id="fullpage">
-      <FullPage>
-        <FullPageItem>1</FullPageItem>
-        <FullPageItem>2</FullPageItem> 
-        <FullPageItem>3</FullPageItem>                  
-      </FullPage>
-    </div>
   </div>
 </template>
 
 <script>
-import FullPageItem from '../../components/fullpage/Page-item'
-import FullPage from '../../components/fullpage/Page'
-
 export default {
-  components: { FullPage, FullPageItem },
-  methods: {
-    menuClick (name) {
-      console.log(name)
-    }
-  }
 }  
 </script>
 

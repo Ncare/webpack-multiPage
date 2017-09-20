@@ -1,14 +1,29 @@
 'use strict'
 
-const path = require('path')
+const { join, resolve } = require('path')
 const webpack = require('webpack')
 const glob = require('glob')
 
 const HtmlWebpackPlugin = require('html-webpack-plugin')
-const CleanWebpackPlugin = require('clean-webpack-plugin')
-const ExtractTextWebpack = require('extract-text-webpack-plugin')    // 抽离css样式
-//const CommonsChunkPlugin = require('webpack/lib/optimize/CommonsChunkPlugin')
-const OptimizeCssPlugin = require('optimize-css-assets-webpack-plugin')
+const ExtractTextPlugin = require('extract-text-webpack-plugin')
+const CommonsChunkPlugin = require('webpack/lib/optimize/CommonsChunkPlugin')
+const OptimizeCSSPlugin = require('optimize-css-assets-webpack-plugin')
+
+const extractCSS = new ExtractTextPlugin({
+  filename: 'assets/css/[name].css',
+  allChunks: true
+})
+
+const extractLESS = new ExtractTextPlugin({
+  filename: 'assets/css/[name].css',
+  allChunks: true
+})
+
+const extractSASS = new ExtractTextPlugin({
+  filename: 'assets/css/[name].css',
+  allChunks: true
+})
+
 
 const entries = {}
 const chunks = []
@@ -18,26 +33,20 @@ glob.sync('./src/pages/**/index.js').forEach(path => {
   chunks.push(chunk)
 })
 
-// entries.push({'vendors': ['vue', 'element-ui']})
-
-console.log(entries)
-console.log(chunks)
-
-//entries['vendors'] = ['element-ui', 'vue']
-
 const config = {
   entry: entries,
-  devtool: '#eval-source-map',  // 追踪js中错误和警告
   output: {
-    filename: 'assets/js/[name].[hash].js',
-    path: __dirname + '/dist'
+    path: resolve(__dirname, './dist'),
+    filename: 'assets/js/[name].js',
+    publicPath: '/'
   },
   resolve: {
-    extensions: [".js", ".vue"],   // 自动解析确定的扩展
+    extensions: ['.js', '.vue'],
     alias: {
-      root: __dirname + '/node_modules',
-      components: __dirname + 'src/components'
-    }    // 相当于路径别名
+      assets: join(__dirname, '/src/assets'),
+      components: join(__dirname, '/src/components'),
+      root: join(__dirname, 'node_modules')
+    }
   },
   module: {
     rules: [
@@ -46,18 +55,22 @@ const config = {
         loader: 'vue-loader',
         options: {
           loaders: {
-            css: ExtractTextWebpack.extract({
+            css: ['css-hot-loader'].concat(ExtractTextPlugin.extract({
               use: 'css-loader',
               fallback: 'style-loader'
-            }),
-            less: ExtractTextWebpack.extract({
+            })),
+            less: ['css-hot-loader'].concat(ExtractTextPlugin.extract({
               use: ['css-loader', 'postcss-loader', 'less-loader'],
               fallback: 'style-loader'
-            }),
-            postcss: ExtractTextWebpack.extract({
+            })),
+            scss: ['css-hot-loader'].concat(ExtractTextPlugin.extract({
+              use: ['css-loader', 'postcss-loader', 'sass-loader'],
+              fallback: 'style-loader'
+            })),
+            postcss: ['css-hot-loader'].concat(ExtractTextPlugin.extract({
               use: ['css-loader', 'postcss-loader'],
               fallback: 'style-loader'
-            })
+            }))
           }
         }
       },
@@ -68,24 +81,31 @@ const config = {
       },
       {
         test: /\.css$/,
-        use: ExtractTextWebpack.extract({
+        use: ['css-hot-loader'].concat(ExtractTextPlugin.extract({
           use: ['css-loader', 'postcss-loader'],
           fallback: 'style-loader'
-        })
+        }))
       },
       {
         test: /\.less$/,
-        use: ExtractTextWebpack.extract({
+        use: ['css-hot-loader'].concat(ExtractTextPlugin.extract({
           use: ['css-loader', 'postcss-loader', 'less-loader'],
           fallback: 'style-loader'
-        })
+        }))
+      },
+      {
+        test: /\.scss$/,
+        use: ['css-hot-loader'].concat(ExtractTextPlugin.extract({
+          use: ['css-loader', 'postcss-loader', 'sass-loader'],
+          fallback: 'style-loader'
+        }))
       },
       {
         test: /\.html$/,
         use: [{
           loader: 'html-loader',
           options: {
-            root: __dirname + '/src',
+            root: resolve(__dirname, 'src'),
             attrs: ['img:src', 'link:href']
           }
         }]
@@ -97,32 +117,40 @@ const config = {
           loader: 'url-loader',
           options: {
             limit: 10000,
-            name: 'assets/img/[name].[ext]',
-            path: __dirname + '/dist'
+            name: 'assets/img/[name].[hash:7].[ext]'
           }
         }]
       }
     ]
   },
   plugins: [
-    new CleanWebpackPlugin(['dist']),
-    new webpack.optimize.CommonsChunkPlugin({
+    new webpack.optimize.ModuleConcatenationPlugin(),
+    new CommonsChunkPlugin({
       name: 'vendors',
-      // filename: 'assets/js/vendors.js',
+      filename: 'assets/js/vendors.js',
       chunks: chunks,
-      minChunks: 2
+      minChunks: chunks.length
     }),
-    new webpack.HotModuleReplacementPlugin(),   // 热加载
-    new ExtractTextWebpack({
-      filename: '[name].css',     // 这里有点问题，加载路径之后，字体文件载入错误？
-      allChunks: true
-    })
+    extractLESS,
+    extractSASS,
+    extractCSS
   ],
   devServer: {
-    hot: true,   // 热加载
     host: '127.0.0.1',
-    port: 8000
-  }
+    port: 8010,
+    historyApiFallback: false,
+    noInfo: true,
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:8080',
+        changeOrigin: true,
+        pathRewrite: { '^/api': '' }
+      }
+    },
+    open: true,
+    openPage: 'user/login.html'
+  },
+  devtool: '#eval-source-map'
 }
 
 glob.sync('./src/pages/**/*.html').forEach(path => {
@@ -142,6 +170,7 @@ module.exports = config
 
 if (process.env.NODE_ENV === 'production') {
   module.exports.devtool = '#source-map'
+  // http://vue-loader.vuejs.org/en/workflow/production.html
   module.exports.plugins = (module.exports.plugins || []).concat([
     new webpack.DefinePlugin({
       'process.env': {
@@ -151,8 +180,9 @@ if (process.env.NODE_ENV === 'production') {
     new webpack.optimize.UglifyJsPlugin({
       compress: {
         warnings: false
-      }
+      },
+      sourceMap: true
     }),
-    new OptimizeCssPlugin()
+    new OptimizeCSSPlugin()
   ])
 }
